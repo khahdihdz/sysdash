@@ -429,17 +429,9 @@ class Sampler:
                 return stat[1:end]
         return f"pid {pid}"
 
-    def collect_processes(self) -> dict[str, Any]:
-        now = time.monotonic()
-        elapsed = (now - self._prev_proc_time) if self._prev_proc_time else 0.0
-        try:
-            clock_ticks = os.sysconf("SC_CLK_TCK")
-        except (ValueError, OSError):
-            clock_ticks = 100
-        try:
-            page_size = os.sysconf("SC_PAGE_SIZE")
-        except (ValueError, OSError):
-            page_size = 4096
+    def _scan_processes(
+        self, elapsed: float, clock_ticks: int, page_size: int
+    ) -> tuple[list[dict[str, Any]], dict[int, int]]:
         rows: list[dict[str, Any]] = []
         current: dict[int, int] = {}
         for pid in utils.iter_pids():
@@ -474,8 +466,30 @@ class Sampler:
                     "rss": rss,
                 }
             )
+        return rows, current
+
+    def collect_processes(self) -> dict[str, Any]:
+        try:
+            clock_ticks = os.sysconf("SC_CLK_TCK")
+        except (ValueError, OSError):
+            clock_ticks = 100
+        try:
+            page_size = os.sysconf("SC_PAGE_SIZE")
+        except (ValueError, OSError):
+            page_size = 4096
+        if self._prev_proc_time is None:
+            # Prime process counters so `--once` has non-zero CPU values.
+            _rows, current = self._scan_processes(0.0, clock_ticks, page_size)
+            self._prev_proc = current
+            self._prev_proc_time = time.monotonic()
+            time.sleep(0.15)
+            elapsed = time.monotonic() - self._prev_proc_time
+            rows, current = self._scan_processes(elapsed, clock_ticks, page_size)
+        else:
+            elapsed = time.monotonic() - self._prev_proc_time
+            rows, current = self._scan_processes(elapsed, clock_ticks, page_size)
         self._prev_proc = current
-        self._prev_proc_time = now
+        self._prev_proc_time = time.monotonic()
         by_cpu = sorted(rows, key=lambda r: (r["cpu"] or 0.0), reverse=True)[: self.cfg.top_n]
         by_mem = sorted(rows, key=lambda r: r["rss"], reverse=True)[: self.cfg.top_n]
         return {"total": len(rows), "by_cpu": by_cpu, "by_mem": by_mem}
@@ -491,7 +505,7 @@ class Sampler:
         count = None
         error = None
         if commands["notification"]:
-            raw = utils.run_cmd(["termux-notification-list"], timeout=4.0)
+            raw = utils.run_cmd(["termux-notification-list"], timeout=1.5)
             if raw is not None:
                 try:
                     data = json.loads(raw)
@@ -558,7 +572,7 @@ class Sampler:
         if cfg.collectors.get("processes", True):
             data["processes"] = self._cached("processes", 2.0, self.collect_processes)
         if cfg.collectors.get("termux", True):
-            data["termux"] = self._cached("termux", 15.0, self.collect_termux)
+            data["termux"] = self._cached("termux", 60.0, self.collect_termux)
         return data
 
 
