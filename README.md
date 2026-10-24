@@ -21,9 +21,9 @@ bash /tmp/sysdash-install.sh
 Tùy chọn khi cài:
 
 ```bash
-SYSDASH_TASKS=1 curl -fsSL .../install.sh | bash   # thêm task snapshot
-SYSDASH_NO_WIDGET=1 curl -fsSL .../install.sh | bash
-SYSDASH_FORCE=1 curl -fsSL .../install.sh | bash    # ghi đè wrapper lạ
+curl -fsSL https://raw.githubusercontent.com/khahdihdz/sysdash/main/install.sh | SYSDASH_TASKS=1 bash   # thêm task snapshot
+curl -fsSL https://raw.githubusercontent.com/khahdihdz/sysdash/main/install.sh | SYSDASH_NO_WIDGET=1 bash
+curl -fsSL https://raw.githubusercontent.com/khahdihdz/sysdash/main/install.sh | SYSDASH_FORCE=1 bash    # ghi đè wrapper lạ
 ```
 
 ## Dùng
