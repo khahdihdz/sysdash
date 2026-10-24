@@ -56,6 +56,13 @@ def app_installed() -> bool | None:
         raw = utils.run_cmd(["pm", "list", "packages", "com.termux.widget"], timeout=5.0)
         if raw is not None:
             result = "package:com.termux.widget" in raw.splitlines()
+    if result is None:
+        # Android's `pm` sometimes fails with "Failed transaction" when the
+        # process has a controlling terminal. Termux:Widget creates this
+        # private data directory once it has been opened, so use it as a
+        # read-only heuristic instead of reporting "unknown" in the menu.
+        if (Path.home() / ".termux" / "widget").exists():
+            result = True
     _APP_CACHE = (now, result)
     return result
 
