@@ -124,6 +124,9 @@ def _print_report(report: dict[str, Any]) -> None:
             lines.append(f"  {status}: {path}")
         for warning in w.get("warnings", []):
             lines.append(f"  [yellow]WARN[/] {warning}")
+    for path in report.get("widget_removed", []):
+        label = "Sẽ xóa" if report.get("dry_run") else "Đã xóa"
+        lines.append(f"{label} shortcut: {path}")
     for path in report.get("removed", []):
         lines.append(f"Đã xóa: {path}")
     for warning in report.get("warnings", []):
