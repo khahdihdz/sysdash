@@ -346,7 +346,8 @@ def thresholds_menu(cfg: config_mod.Config) -> None:
         try:
             w = float(warn.replace(",", "."))
             c = float(crit.replace(",", "."))
-            if w < c:
+            valid = c < w if prefix == "battery" else w < c
+            if valid:
                 cfg.thresholds[warn_key] = w
                 cfg.thresholds[crit_key] = c
         except ValueError:
