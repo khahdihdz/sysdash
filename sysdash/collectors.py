@@ -131,8 +131,11 @@ class Sampler:
         else:
             elapsed = now - prev[0]
             delta = total - prev[1]
-        if elapsed <= 0 or delta < 0:
+        if elapsed <= 0:
             return None
+        # PID churn can make the aggregate go slightly backwards between two
+        # very short samples; clamp instead of showing N/A.
+        delta = max(0, delta)
         try:
             ticks = os.sysconf("SC_CLK_TCK")
         except (ValueError, OSError):
