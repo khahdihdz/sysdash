@@ -11,6 +11,7 @@ import shlex
 import shutil
 import stat
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,7 @@ MARKER = "# managed by sysdash (termux:widget) v1"
 DEFAULT_NAME = "System Dashboard"
 DEFAULT_TASK_NAME = "Sysdash Snapshot"
 FORBIDDEN_CHARS = set('/\\:*?"<>|')
+_APP_CACHE: tuple[float, bool | None] | None = None
 
 
 class WidgetError(RuntimeError):
@@ -42,10 +44,20 @@ def _backup_root() -> Path:
 
 def app_installed() -> bool | None:
     """Return True/False, or None when pm is unavailable."""
-    raw = utils.run_cmd(["pm", "list", "packages", "com.termux.widget"], timeout=5.0)
-    if raw is None:
-        return None
-    return "package:com.termux.widget" in raw.splitlines()
+    global _APP_CACHE
+    now = time.monotonic()
+    if _APP_CACHE is not None and now - _APP_CACHE[0] < 30.0:
+        return _APP_CACHE[1]
+    result: bool | None = None
+    path = utils.run_cmd(["pm", "path", "com.termux.widget"], timeout=3.0)
+    if path is not None:
+        result = bool(path.strip())
+    else:
+        raw = utils.run_cmd(["pm", "list", "packages", "com.termux.widget"], timeout=5.0)
+        if raw is not None:
+            result = "package:com.termux.widget" in raw.splitlines()
+    _APP_CACHE = (now, result)
+    return result
 
 
 def validate_name(name: str) -> str:
