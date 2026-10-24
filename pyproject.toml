@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sysdash-termux"
+version = "0.1.0"
+description = "System Dashboard TUI for Termux"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "khahdihdz" }]
+dependencies = ["rich>=13"]
+
+[project.scripts]
+sysdash = "sysdash.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["sysdash*"]
