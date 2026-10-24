@@ -226,10 +226,12 @@ def repair(
         raise InstallerError(f"Không tìm thấy bản cài tại {dest}. Chạy 'sysdash install' trước.")
     report["wrapper_status"] = write_wrapper(dest, dry_run=dry_run, force=force)
     if not utils.config_path().exists():
-        report["config_status"] = str(config_mod.save(config_mod.Config()))
+        config_mod.save(config_mod.Config())
+        report["config_status"] = "created"
     else:
         cfg = config_mod.load()
-        report["config_status"] = str(config_mod.save(cfg))
+        config_mod.save(cfg)
+        report["config_status"] = "repaired"
     if with_widget:
         try:
             report["widget"] = widget.install(
